@@ -1,0 +1,7 @@
+*.kubeconfig
+*.kubeconfig.*
+.env
+.env.*
+.DS_Store
+*.tmp
+*.log
