@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gitops-demo
+  namespace: argocd
+spec:
+  description: GitOps demo project managed from Git
+  sourceRepos:
+    - https://github.com/abhishekchauhan9520/devops-project-27-argocd-gitops.git
+  destinations:
+    - namespace: gitops-staging
+      server: https://kubernetes.default.svc
+    - namespace: gitops-production
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
