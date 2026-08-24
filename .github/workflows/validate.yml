@@ -1,0 +1,25 @@
+name: Validate GitOps
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Install validation dependency
+        run: python -m pip install --disable-pip-version-check pyyaml
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+      - name: Validate GitOps repository
+        run: bash scripts/validate.sh
