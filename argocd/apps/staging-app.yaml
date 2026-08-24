@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gitops-demo-staging
+  namespace: argocd
+spec:
+  project: gitops-demo
+  source:
+    repoURL: https://github.com/abhishekchauhan9520/devops-project-27-argocd-gitops.git
+    targetRevision: main
+    path: apps/overlays/staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gitops-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+  revisionHistoryLimit: 10
