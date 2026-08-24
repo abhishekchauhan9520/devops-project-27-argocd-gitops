@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: gitops-staging
+resources:
+  - ../../base
+  - namespace.yaml
+patches:
+  - path: patch-replicas.yaml
+images:
+  - name: ghcr.io/example/gitops-demo
+    newTag: v1.0.0
