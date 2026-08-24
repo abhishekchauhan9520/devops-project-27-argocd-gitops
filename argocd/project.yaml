@@ -16,5 +16,7 @@ spec:
     - group: ""
       kind: Namespace
   namespaceResourceWhitelist:
-    - group: "*"
-      kind: "*"
+    - group: apps
+      kind: Deployment
+    - group: ""
+      kind: Service
