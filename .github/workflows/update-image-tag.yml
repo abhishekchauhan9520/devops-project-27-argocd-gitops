@@ -1,0 +1,69 @@
+name: Propose Image Promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'GitOps environment to update'
+        required: true
+        type: choice
+        options: [staging, production]
+      image_tag:
+        description: 'Immutable image tag, preferably a Git SHA'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Update image tag
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os, re
+
+          env = os.environ['ENVIRONMENT']
+          tag = os.environ['IMAGE_TAG']
+          if not re.fullmatch(r'[A-Za-z0-9._-]+', tag):
+              raise SystemExit('Invalid image tag')
+          path = Path(f'apps/overlays/{env}/kustomization.yaml')
+          text = path.read_text()
+          updated = re.sub(r'(newTag:\s*).+', rf'\g<1>{tag}', text)
+          if updated == text:
+              raise SystemExit('newTag was not updated')
+          path.write_text(updated)
+          PY
+
+      - name: Validate updated state
+        run: |
+          python -m pip install --disable-pip-version-check pyyaml
+          bash scripts/validate.sh
+
+      - name: Open promotion PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          branch="promote/${ENVIRONMENT}-${IMAGE_TAG}"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b "$branch"
+          git add "apps/overlays/${ENVIRONMENT}/kustomization.yaml"
+          git commit -m "chore(${ENVIRONMENT}): promote image to ${IMAGE_TAG}"
+          git push --set-upstream origin "$branch"
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "Promote ${ENVIRONMENT} to ${IMAGE_TAG}" \
+            --body "GitOps promotion PR. Argo CD will reconcile the merged desired state."
